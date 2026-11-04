@@ -13,9 +13,13 @@ import {
   FiShield,
   FiLogOut,
   FiMenu,
-  FiX
+  FiX,
+  FiSmartphone,
+  FiCopy,
+  FiCheck
 } from 'react-icons/fi';
 import { FaBicycle, FaCalculator, FaBoxOpen, FaStore, FaGraduationCap } from 'react-icons/fa';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -27,7 +31,33 @@ const Navbar = () => {
   const [keyword, setKeyword] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [phoneModalOpen, setPhoneModalOpen] = useState(false);
+  const [phoneUrl, setPhoneUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+
+  const openPhoneModal = async () => {
+    setPhoneModalOpen(true);
+    try {
+      const res = await api.get('/network-info');
+      if (res.data?.primaryUrl) {
+        setPhoneUrl(res.data.primaryUrl);
+        return;
+      }
+    } catch (e) {
+      // fallback
+    }
+    const host = window.location.hostname === 'localhost' ? '10.177.38.85' : window.location.hostname;
+    setPhoneUrl(`http://${host}:5173`);
+  };
+
+  const handleCopyLink = () => {
+    if (phoneUrl) {
+      navigator.clipboard.writeText(phoneUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -150,8 +180,18 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Icons: Wishlist, Cart & Profile */}
-          <div className="flex items-center gap-3">
+          {/* Icons: Phone, Wishlist, Cart & Profile */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Phone Access Button */}
+            <button
+              onClick={openPhoneModal}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold transition border border-emerald-200 cursor-pointer shadow-xs"
+              title="Open CampusKart on your Mobile Phone"
+            >
+              <FiSmartphone className="w-4 h-4 text-emerald-600" />
+              <span className="hidden md:inline">Open on Phone</span>
+            </button>
+
             {/* Wishlist */}
             <Link
               to="/wishlist"
@@ -374,6 +414,65 @@ const Navbar = () => {
           </div>
         )}
       </div>
+
+      {/* Phone Pairing QR Modal */}
+      {phoneModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-slate-800">
+                <FiSmartphone className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-extrabold text-base">Open on Mobile Phone</h3>
+              </div>
+              <button
+                onClick={() => setPhoneModalOpen(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              Scan this QR code with your phone camera or QR scanner. Phone and laptop must be on the same Wi-Fi.
+            </p>
+
+            {/* QR Code Container */}
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 inline-block shadow-inner">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(phoneUrl || window.location.href)}`}
+                alt="Scan to Open on Phone"
+                className="w-48 h-48 mx-auto rounded-xl object-contain bg-white p-2"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Or open this link on phone</span>
+              <div className="flex items-center gap-1.5 p-2 bg-slate-100 rounded-xl border border-slate-200">
+                <input
+                  type="text"
+                  readOnly
+                  value={phoneUrl}
+                  className="bg-transparent text-xs font-mono font-bold text-indigo-900 flex-1 outline-none truncate select-all"
+                />
+                <button
+                  onClick={handleCopyLink}
+                  className="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1 transition cursor-pointer flex-shrink-0"
+                >
+                  {copied ? <FiCheck className="w-3.5 h-3.5" /> : <FiCopy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-left text-[11px] text-amber-900 space-y-1">
+              <span className="font-bold block">💡 Instant Connection Tip:</span>
+              <p>
+                Connect your laptop and mobile phone to the same MNNIT campus Wi-Fi or turn on Mobile Hotspot.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

@@ -1,4 +1,5 @@
 const express = require('express');
+const os = require('os');
 const authRoutes = require('./authRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const resourceRoutes = require('./resourceRoutes');
@@ -37,6 +38,25 @@ router.post('/reset-marketplace', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+// Network Information endpoint for instant phone pairing
+router.get('/network-info', (req, res) => {
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+  for (const name of Object.keys(interfaces)) {
+    for (const net of interfaces[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        ips.push({ name, ip: net.address, url: `http://${net.address}:5173` });
+      }
+    }
+  }
+  const wifi = ips.find((i) => i.name.toLowerCase().includes('wi-fi') || i.name.toLowerCase().includes('wireless')) || ips[0];
+  res.json({
+    primaryIp: wifi ? wifi.ip : 'localhost',
+    primaryUrl: wifi ? wifi.url : 'http://localhost:5173',
+    interfaces: ips
+  });
 });
 
 // Mount modules
