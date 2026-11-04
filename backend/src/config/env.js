@@ -8,7 +8,7 @@ const config = {
   port: parseInt(process.env.PORT, 10) || 5000,
   apiPrefix: process.env.API_PREFIX || '/api/v1',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  mongodbUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campuskart',
+  mongodbUri: (process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/campuskart').trim(),
   jwt: {
     secret: process.env.JWT_SECRET || 'campuskart_default_development_secret_key_12345',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'

@@ -4,7 +4,10 @@ const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 const config = require('./config/env');
+const { connectDB } = require('./config/db');
+const logger = require('./utils/logger');
 const routes = require('./routes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const { apiLimiter } = require('./middlewares/rateLimiter');
@@ -55,6 +58,26 @@ app.use('/uploads', express.static(uploadsDir));
 if (config.env !== 'test') {
   app.use('/api/', apiLimiter);
 }
+
+// Ensure database connection before handling API requests (critical for Serverless environments like Vercel)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') && config.env !== 'test') {
+    try {
+      if (mongoose.connection.readyState < 1) {
+        await connectDB();
+      }
+    } catch (dbErr) {
+      logger.error(`Database connection error on ${req.method} ${req.path}: ${dbErr.message}`);
+      return res.status(503).json({
+        success: false,
+        error: 'DATABASE_CONNECTION_ERROR',
+        message: 'Database connection failed. Please ensure MONGODB_URI is set in Vercel Environment Variables and MongoDB Atlas Network Access is set to 0.0.0.0/0 (Allow access from anywhere).',
+        details: dbErr.message
+      });
+    }
+  }
+  next();
+});
 
 // Mount API routes
 app.use(config.apiPrefix, routes);

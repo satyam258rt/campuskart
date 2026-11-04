@@ -35,8 +35,13 @@ const getPersistentDbDir = () => {
 };
 
 const connectDB = async (uri = config.mongodbUri) => {
+  // Reuse existing active connection in serverless or repeated invocations
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
   try {
-    const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 2500 });
+    const conn = await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
     logger.info(`MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
 
     // Check if initial seeding is needed without wiping existing listings
@@ -44,7 +49,15 @@ const connectDB = async (uri = config.mongodbUri) => {
 
     return conn;
   } catch (error) {
-    if (process.env.NODE_ENV !== 'test') {
+    // Only attempt embedded local MongoDB on local Windows development machine
+    const isLocalWindowsDev =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.NODE_ENV !== 'test' &&
+      process.platform === 'win32' &&
+      !process.env.VERCEL &&
+      !process.env.RENDER;
+
+    if (isLocalWindowsDev) {
       logger.warn(`Could not connect to external MongoDB at ${uri}: ${error.message}`);
       logger.info('Starting embedded MongoDB with local persistent storage for zero-config campus development...');
       try {
@@ -72,9 +85,11 @@ const connectDB = async (uri = config.mongodbUri) => {
         return conn;
       } catch (memError) {
         logger.error(`Failed to start embedded database: ${memError.message}`);
-        process.exit(1);
+        throw memError;
       }
     }
+
+    logger.error(`MongoDB Connection Failed: ${error.message}`);
     throw error;
   }
 };
