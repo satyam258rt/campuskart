@@ -1,0 +1,28 @@
+{
+  "name": "campuskart-workspace",
+  "version": "1.0.0",
+  "description": "CampusKart - Smart Campus Marketplace for Students, Vendors & Admins",
+  "private": true,
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start:backend": "npm --prefix backend start",
+    "dev:backend": "npm --prefix backend run dev",
+    "seed:backend": "npm --prefix backend run seed",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "test": "npm --prefix backend test"
+  },
+  "keywords": [
+    "campuskart",
+    "marketplace",
+    "bicycles",
+    "calculators",
+    "books",
+    "student",
+    "vendor",
+    "admin"
+  ],
+  "author": "CampusKart Engineering",
+  "license": "ISC"
+}

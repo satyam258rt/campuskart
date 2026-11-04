@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: campuskart
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REQUIRE_CAMPUS_EMAIL
+        value: "true"
+      - key: ALLOWED_CAMPUS_DOMAINS
+        value: "mnnit.ac.in"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
